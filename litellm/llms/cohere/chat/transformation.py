@@ -145,6 +145,7 @@ class CohereChatConfig(BaseConfig):
             "tool_choice",
             "seed",
             "extra_headers",
+            "raw_prompting",
         ]
 
     def map_openai_params(
@@ -177,12 +178,16 @@ class CohereChatConfig(BaseConfig):
                 optional_params["tools"] = value
             if param == "seed":
                 optional_params["seed"] = value
+            if param == "raw_prompting":
+                optional_params["raw_prompting"] = value
+            # this for-loop is crazy?
         return optional_params
 
     def transform_request(
         self,
         model: str,
         messages: List[AllMessageValues],
+        prompt: str | None,
         optional_params: dict,
         litellm_params: dict,
         headers: dict,
@@ -195,7 +200,7 @@ class CohereChatConfig(BaseConfig):
                 optional_params[k] = v
 
         most_recent_message, chat_history = cohere_messages_pt_v2(
-            messages=messages, model=model, llm_provider="cohere_chat"
+            messages=messages, prompt=prompt, model=model, llm_provider="cohere_chat"
         )
 
         ## Handle Tool Calling
@@ -212,6 +217,10 @@ class CohereChatConfig(BaseConfig):
         if len(chat_history) > 0 and chat_history[-1]["role"] == "USER":
             optional_params["force_single_step"] = True
 
+        # raw prompting
+        if "raw_prompting" in optional_params and optional_params["raw_prompting"]:
+            optional_params["prompt"] = prompt
+            del optional_params["message"]
         return optional_params
 
     def transform_response(
@@ -230,7 +239,10 @@ class CohereChatConfig(BaseConfig):
     ) -> ModelResponse:
         try:
             raw_response_json = raw_response.json()
-            model_response.choices[0].message.content = raw_response_json["text"]  # type: ignore
+            if "generations" in raw_response_json:
+                model_response.choices[0].message.content = raw_response_json["generations"][0]["text"]  # type: ignore
+            else:
+                model_response.choices[0].message.content = raw_response_json["text"]  # type: ignore
         except Exception:
             raise CohereError(
                 message=raw_response.text, status_code=raw_response.status_code
@@ -260,7 +272,7 @@ class CohereChatConfig(BaseConfig):
                 tool_calls.append(tool_call)
             _message = litellm.Message(
                 tool_calls=tool_calls,
-                content=None,
+                content=raw_response_json["text"], # save the text
             )
             model_response.choices[0].message = _message  # type: ignore
 

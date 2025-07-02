@@ -477,6 +477,7 @@ async def acompletion(
         "tools": tools,
         "tool_choice": tool_choice,
         "parallel_tool_calls": parallel_tool_calls,
+        "raw_prompting": raw_prompting,
         "logprobs": logprobs,
         "top_logprobs": top_logprobs,
         "deployment_id": deployment_id,
@@ -828,6 +829,7 @@ def completion(  # type: ignore # noqa: PLR0915
     model: str,
     # Optional OpenAI params: see https://platform.openai.com/docs/api-reference/chat/create
     messages: List = [],
+    prompt: str | None = None,
     timeout: Optional[Union[float, str, httpx.Timeout]] = None,
     temperature: Optional[float] = None,
     top_p: Optional[float] = None,
@@ -853,6 +855,7 @@ def completion(  # type: ignore # noqa: PLR0915
     logprobs: Optional[bool] = None,
     top_logprobs: Optional[int] = None,
     parallel_tool_calls: Optional[bool] = None,
+    raw_prompting: Optional[bool] = None,
     web_search_options: Optional[OpenAIWebSearchOptions] = None,
     deployment_id=None,
     extra_headers: Optional[dict] = None,
@@ -1185,6 +1188,7 @@ def completion(  # type: ignore # noqa: PLR0915
             "top_logprobs": top_logprobs,
             "api_version": api_version,
             "parallel_tool_calls": parallel_tool_calls,
+            "raw_prompting": raw_prompting,
             "messages": messages,
             "reasoning_effort": reasoning_effort,
             "thinking": thinking,
@@ -2196,6 +2200,7 @@ def completion(  # type: ignore # noqa: PLR0915
                 model=model,
                 stream=stream,
                 messages=messages,
+                prompt=prompt,
                 acompletion=acompletion,
                 api_base=api_base,
                 model_response=model_response,
@@ -2224,6 +2229,8 @@ def completion(  # type: ignore # noqa: PLR0915
                 or get_secret_str("COHERE_API_BASE")
                 or "https://api.cohere.ai/v1/chat"
             )
+            if raw_prompting:
+                api_base = api_base.replace("chat", "generate")
 
             headers = headers or litellm.headers or {}
             if headers is None:
@@ -2236,6 +2243,7 @@ def completion(  # type: ignore # noqa: PLR0915
                 model=model,
                 stream=stream,
                 messages=messages,
+                prompt=prompt,
                 acompletion=acompletion,
                 api_base=api_base,
                 model_response=model_response,

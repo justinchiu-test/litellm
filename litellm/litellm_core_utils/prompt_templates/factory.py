@@ -1987,6 +1987,7 @@ def convert_to_cohere_tool_invoke(tool_calls: list) -> List[ToolCallObject]:
 
 def cohere_messages_pt_v2(  # noqa: PLR0915
     messages: List,
+    prompt: str | None,
     model: str,
     llm_provider: str,
 ) -> Tuple[Union[str, ToolResultObject], ChatHistory]:
@@ -2003,6 +2004,9 @@ def cohere_messages_pt_v2(  # noqa: PLR0915
     - message must be at least 1 token long or tool results must be specified.
     - cannot specify tool_results if the last entry in chat history contains a user message
     """
+    if prompt is not None:
+        return prompt, []
+
     tool_calls: List = get_all_tool_calls(messages=messages)
 
     ## GET MOST RECENT MESSAGE

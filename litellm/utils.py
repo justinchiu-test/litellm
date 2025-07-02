@@ -3167,6 +3167,7 @@ def get_optional_params(  # noqa: PLR0915
     extra_headers=None,
     api_version=None,
     parallel_tool_calls=None,
+    raw_prompting=None,
     drop_params=None,
     allowed_openai_params: Optional[List[str]] = None,
     reasoning_effort=None,

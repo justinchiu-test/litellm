@@ -274,6 +274,7 @@ class BaseLLMHTTPHandler:
         timeout: Union[float, httpx.Timeout],
         litellm_params: dict,
         acompletion: bool,
+        prompt: str | None = None,
         stream: Optional[bool] = False,
         fake_stream: bool = False,
         api_key: Optional[str] = None,
@@ -326,6 +327,7 @@ class BaseLLMHTTPHandler:
         data = provider_config.transform_request(
             model=model,
             messages=messages,
+            prompt=prompt,
             optional_params=optional_params,
             litellm_params=litellm_params,
             headers=headers,
